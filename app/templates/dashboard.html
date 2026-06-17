@@ -27,6 +27,7 @@
         >{{ d }}d</a>
         {% endfor %}
       </div>
+      <button onclick="clearData()" class="text-xs text-red-400 hover:text-red-600">Clear data</button>
       <a href="/logout" class="text-xs text-gray-400 hover:text-gray-600">Sign out</a>
     </div>
   </header>
@@ -160,6 +161,16 @@
   </main>
 
   <script>
+    async function clearData() {
+      if (!confirm('Delete all events for this org? This cannot be undone.')) return;
+      const res = await fetch('/events', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer {{ org.api_key }}' },
+      });
+      if (res.ok) location.reload();
+      else alert('Failed to clear data.');
+    }
+
     const trendDatasets = {{ trend_datasets | tojson }};
     const trendLabels = {{ trend_labels | tojson }};
 

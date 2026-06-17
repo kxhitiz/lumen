@@ -27,6 +27,13 @@ def resolve_org(authorization: str = Header(...), db: Session = Depends(get_db))
     return org
 
 
+@router.delete("/events", status_code=200)
+def clear_events(org: Org = Depends(resolve_org), db: Session = Depends(get_db)):
+    db.query(Event).filter(Event.org_id == org.id).delete()
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/events", status_code=201)
 def ingest(payload: EventPayload, org: Org = Depends(resolve_org), db: Session = Depends(get_db)):
     event = Event(
