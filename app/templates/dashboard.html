@@ -12,7 +12,6 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
 
-  <!-- Header -->
   <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <span class="text-xl font-bold tracking-tight text-indigo-600">Lumen</span>
@@ -20,7 +19,14 @@
       <span class="text-gray-700 font-medium">{{ org.name }}</span>
     </div>
     <div class="flex items-center gap-4">
-      <span class="text-xs text-gray-400">Last 30 days</span>
+      <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        {% for d in [7, 14, 30] %}
+        <a
+          href="/dashboard?days={{ d }}"
+          class="text-xs px-3 py-1 rounded-md transition-colors {% if days == d %}bg-white text-gray-900 shadow-sm font-medium{% else %}text-gray-500 hover:text-gray-700{% endif %}"
+        >{{ d }}d</a>
+        {% endfor %}
+      </div>
       <a href="/logout" class="text-xs text-gray-400 hover:text-gray-600">Sign out</a>
     </div>
   </header>
@@ -30,12 +36,12 @@
     <!-- Stat cards -->
     <div class="grid grid-cols-3 gap-4">
       <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <p class="text-sm text-gray-500 mb-1">Total Events</p>
+        <p class="text-sm text-gray-500 mb-1">Total Skill Uses</p>
         <p class="text-3xl font-bold text-gray-900">{{ total }}</p>
       </div>
       <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <p class="text-sm text-gray-500 mb-1">Active Users</p>
-        <p class="text-3xl font-bold text-gray-900">{{ unique_users }}</p>
+        <p class="text-sm text-gray-500 mb-1">Unique Skills Used</p>
+        <p class="text-3xl font-bold text-gray-900">{{ unique_skills }}</p>
       </div>
       <div class="bg-white rounded-xl border border-gray-200 p-6">
         <p class="text-sm text-gray-500 mb-1">Projects</p>
@@ -43,39 +49,48 @@
       </div>
     </div>
 
-    <!-- Charts row -->
-    <div class="grid grid-cols-2 gap-6">
-
-      <!-- Events over time -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Events over time</h2>
-        <canvas id="timeChart" height="200"></canvas>
+    <!-- Skill trends (hero chart) -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900">Skill usage trends</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Daily usage per skill over the last 30 days</p>
+        </div>
+        <!-- Clickable legend -->
+        <div id="trend-legend" class="flex flex-wrap gap-x-3 gap-y-1.5 justify-end max-w-lg"></div>
       </div>
-
-      <!-- Events by type -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Events by type</h2>
-        <canvas id="typeChart" height="200"></canvas>
-      </div>
-
+      {% if trend_datasets %}
+      <canvas id="trendChart" height="100"></canvas>
+      {% else %}
+      <p class="text-sm text-gray-400 py-8 text-center">No skill events yet. Add the hook to start tracking.</p>
+      {% endif %}
     </div>
 
-    <!-- Top users + top projects -->
+    <!-- Skills leaderboard + Top projects -->
     <div class="grid grid-cols-2 gap-6">
 
       <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-sm font-semibold text-gray-700 mb-4">Top users</h2>
-        {% if top_users %}
-        <ul class="space-y-2">
-          {% for user, count in top_users %}
-          <li class="flex items-center justify-between text-sm">
-            <span class="text-gray-700 truncate max-w-xs">{{ user }}</span>
-            <span class="font-medium text-gray-900 ml-4">{{ count }}</span>
-          </li>
-          {% endfor %}
-        </ul>
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Skills by total usage</h2>
+        {% if top_skills %}
+          {% set max_count = top_skills[0][1] %}
+          <ul class="space-y-3">
+            {% for skill, count in top_skills %}
+            <li>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-800 font-mono font-medium">{{ skill }}</span>
+                <span class="text-gray-500 tabular-nums ml-4">{{ count }}</span>
+              </div>
+              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-indigo-500 rounded-full"
+                  style="width: {{ (count / max_count * 100) | round | int }}%"
+                ></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
         {% else %}
-        <p class="text-sm text-gray-400">No data yet.</p>
+          <p class="text-sm text-gray-400">No data yet.</p>
         {% endif %}
       </div>
 
@@ -85,8 +100,8 @@
         <ul class="space-y-2">
           {% for project, count in top_projects %}
           <li class="flex items-center justify-between text-sm">
-            <span class="text-gray-700 truncate max-w-xs">{{ project }}</span>
-            <span class="font-medium text-gray-900 ml-4">{{ count }}</span>
+            <span class="text-gray-700 font-mono truncate max-w-xs">{{ project }}</span>
+            <span class="font-medium text-gray-900 ml-4 tabular-nums">{{ count }}</span>
           </li>
           {% endfor %}
         </ul>
@@ -105,10 +120,10 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs text-gray-500 border-b border-gray-100">
+              <th class="pb-2 pr-4 font-medium">Skill</th>
               <th class="pb-2 pr-4 font-medium">Event</th>
               <th class="pb-2 pr-4 font-medium">User</th>
               <th class="pb-2 pr-4 font-medium">Project</th>
-              <th class="pb-2 pr-4 font-medium">Properties</th>
               <th class="pb-2 font-medium">Time</th>
             </tr>
           </thead>
@@ -116,15 +131,21 @@
             {% for event in recent %}
             <tr class="hover:bg-gray-50">
               <td class="py-2 pr-4">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700">
+                {% if event.properties and event.properties.get('skill') %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-medium bg-indigo-50 text-indigo-700">
+                  {{ event.properties.get('skill') }}
+                </span>
+                {% else %}
+                <span class="text-gray-300 text-xs">—</span>
+                {% endif %}
+              </td>
+              <td class="py-2 pr-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
                   {{ event.event }}
                 </span>
               </td>
               <td class="py-2 pr-4 text-gray-600">{{ event.user or '—' }}</td>
-              <td class="py-2 pr-4 text-gray-600">{{ event.project or '—' }}</td>
-              <td class="py-2 pr-4 text-gray-400 font-mono text-xs truncate max-w-xs">
-                {% if event.properties %}{{ event.properties | tojson }}{% else %}—{% endif %}
-              </td>
+              <td class="py-2 pr-4 text-gray-600 font-mono text-xs">{{ event.project or '—' }}</td>
               <td class="py-2 text-gray-400 whitespace-nowrap">{{ event.created_at.strftime('%b %d %H:%M') }}</td>
             </tr>
             {% endfor %}
@@ -139,59 +160,61 @@
   </main>
 
   <script>
-    const indigo = 'rgb(99, 102, 241)';
-    const indigoLight = 'rgba(99, 102, 241, 0.15)';
-    const palette = [
-      '#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6'
-    ];
+    const trendDatasets = {{ trend_datasets | tojson }};
+    const trendLabels = {{ trend_labels | tojson }};
 
-    // Events over time
-    new Chart(document.getElementById('timeChart'), {
-      type: 'line',
-      data: {
-        labels: {{ daily_labels | tojson }},
-        datasets: [{
-          label: 'Events',
-          data: {{ daily_data | tojson }},
-          borderColor: indigo,
-          backgroundColor: indigoLight,
-          borderWidth: 2,
-          pointRadius: 3,
-          fill: true,
-          tension: 0.3,
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } } }
+    if (trendDatasets.length > 0) {
+      const chart = new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+          labels: trendLabels,
+          datasets: trendDatasets,
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: (items) => items[0].label,
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                font: { size: 11 },
+                maxTicksLimit: 10,
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, font: { size: 11 } }
+            }
+          }
         }
-      }
-    });
+      });
 
-    // Events by type
-    const typeLabels = {{ events_by_type | map(attribute=0) | list | tojson }};
-    const typeCounts = {{ events_by_type | map(attribute=1) | list | tojson }};
-    new Chart(document.getElementById('typeChart'), {
-      type: 'bar',
-      data: {
-        labels: typeLabels,
-        datasets: [{
-          label: 'Count',
-          data: typeCounts,
-          backgroundColor: palette.slice(0, typeLabels.length),
-          borderRadius: 4,
-        }]
-      },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-          y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } } }
-        }
-      }
-    });
+      // Build clickable legend
+      const legend = document.getElementById('trend-legend');
+      trendDatasets.forEach((ds, i) => {
+        const btn = document.createElement('button');
+        btn.dataset.index = i;
+        btn.className = 'flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 transition-opacity';
+        btn.innerHTML = `<span class="swatch" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ds.borderColor}"></span><span class="label">${ds.label}</span>`;
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index);
+          const visible = chart.isDatasetVisible(idx);
+          chart.setDatasetVisibility(idx, !visible);
+          chart.update();
+          btn.style.opacity = visible ? '0.35' : '1';
+          btn.querySelector('.swatch').style.background = visible ? '#d1d5db' : ds.borderColor;
+        });
+        legend.appendChild(btn);
+      });
+    }
   </script>
 
 </body>
