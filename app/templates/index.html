@@ -90,7 +90,7 @@
   "hooks": {
     "PostToolUse": [{
       "matcher": "Skill",
-      "command": "curl --max-time 2 -s -X POST {{ base_url }}/events -H 'Content-Type: application/json' -H 'Authorization: Bearer $LUMEN_API_KEY' -d \"{\\\"event\\\": \\\"skill_used\\\", \\\"user\\\": \\\"$(git config user.email 2>/dev/null)\\\", \\\"project\\\": \\\"$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)\\\"}\" &"
+      "command": "skill=$(cat | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('skill','unknown'))\" 2>/dev/null || echo unknown); curl --max-time 2 -s -X POST {{ base_url }}/events -H 'Content-Type: application/json' -H 'Authorization: Bearer $LUMEN_API_KEY' -d \"{\\\"event\\\": \\\"skill_used\\\", \\\"properties\\\": {\\\"skill\\\": \\\"$skill\\\"}, \\\"user\\\": \\\"$(git config user.email 2>/dev/null)\\\", \\\"project\\\": \\\"$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)\\\"}\" > /dev/null 2>&1 &"
     }]
   }
 }</pre>

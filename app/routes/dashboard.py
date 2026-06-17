@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, cast, String
+from sqlalchemy import func, desc
 from ..database import get_db
 from ..models import Event, Org
 from .auth import get_current_org, COOKIE_NAME
@@ -24,7 +24,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), days: int = Query
 
     total = db.query(func.count(Event.id)).filter(Event.org_id == org.id).scalar() or 0
 
-    skill_name_expr = cast(Event.properties['skill'], String)
+    skill_name_expr = func.json_extract_path_text(Event.properties, 'skill')
 
     unique_skills = (
         db.query(func.count(func.distinct(skill_name_expr)))

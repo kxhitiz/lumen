@@ -1,19 +1,15 @@
 # Lumen
 
-A lightweight analytics platform for Claude Code. Track how your team uses Claude Code hooks, skills, and tools — across any number of projects and organizations.
-
-## How it works
-
-1. Deploy Lumen to Railway (one click below)
-2. Create an org and get an API key
-3. Add a `PostToolUse` hook to your `.claude/settings.json`
-4. Events flow in; your dashboard lights up
+A lightweight analytics platform for Claude Code. Track how your team uses skills, tools, and workflows — across any number of projects and organizations.
 
 ## Deploy to Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/lumen)
-
-You'll need to add a PostgreSQL database service in Railway — it connects automatically via the `DATABASE_URL` env var.
+1. Go to [railway.app](https://railway.app) and create a new project
+2. **Add a service** → Deploy from GitHub repo → select `Aark2g-Labs/lumen`
+3. **Add a service** → Database → PostgreSQL
+4. Railway automatically injects `DATABASE_URL` — no extra config needed
+5. Optionally set `ADMIN_SECRET` in the app service's environment variables to restrict org creation
+6. Once deployed, visit `https://your-app.railway.app/setup` to create your first org
 
 ## Local development
 
@@ -24,70 +20,66 @@ createdb lumen
 # Install dependencies
 pip install -r requirements.txt
 
-# Set env
-cp .env.example .env
+# Configure
+cp .env.example .env   # edit DATABASE_URL if needed
 
 # Run
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8765
 ```
 
-## Create your org
+## Environment variables
 
-```bash
-curl -X POST https://your-lumen-app.railway.app/orgs \
-  -H 'Content-Type: application/json' \
-  -d '{"name": "Acme Corp"}'
-# => {"slug": "acme-corp", "api_key": "..."}
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string (set automatically by Railway) |
+| `ADMIN_SECRET` | No | If set, required when creating orgs via `/setup` or `POST /orgs` |
 
-Save the `api_key` — it's used both for ingesting events and viewing the dashboard.
+## Getting started
 
-## View your dashboard
+1. Visit `/setup` — enter your org name, copy the API key shown
+2. Visit `/login` — paste the API key to access your dashboard
+3. Add the hook below to start tracking skill usage
 
-```
-https://your-lumen-app.railway.app/dashboard?key=YOUR_API_KEY
-```
+## Claude Code hook
 
-## Add the Claude Code hook
-
-Add this to your project's `.claude/settings.json` (or the global `~/.claude/settings.json`):
+Add this to `.claude/settings.json` (project or global `~/.claude/settings.json`):
 
 ```json
 {
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": ".*",
-        "command": "curl --max-time 2 -s -X POST https://your-lumen-app.railway.app/events -H 'Content-Type: application/json' -H 'Authorization: Bearer $LUMEN_API_KEY' -d \"{\\\"event\\\": \\\"$CLAUDE_TOOL_NAME\\\", \\\"user\\\": \\\"$(git config user.email 2>/dev/null)\\\", \\\"project\\\": \\\"$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)\\\"}\""
-      }
-    ]
+    "PostToolUse": [{
+      "matcher": "Skill",
+      "command": "skill=$(cat | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('skill','unknown'))\" 2>/dev/null || echo unknown); curl --max-time 2 -s -X POST https://your-app.railway.app/events -H 'Content-Type: application/json' -H 'Authorization: Bearer $LUMEN_API_KEY' -d \"{\\\"event\\\": \\\"skill_used\\\", \\\"properties\\\": {\\\"skill\\\": \\\"$skill\\\"}, \\\"user\\\": \\\"$(git config user.email 2>/dev/null)\\\", \\\"project\\\": \\\"$(basename $(git rev-parse --show-toplevel 2>/dev/null) 2>/dev/null)\\\"}\" > /dev/null 2>&1 &"
+    }]
   }
 }
 ```
 
-Set `LUMEN_API_KEY` as an environment variable on each developer's machine.
-
-The `matcher` above captures all tool uses. To track only skill invocations, set `"matcher": "Skill"`.
+Set `LUMEN_API_KEY=your_api_key` in each developer's shell environment (e.g. `~/.zshrc`).
 
 ## Event schema
 
 ```json
 {
   "event": "skill_used",
-  "properties": { "skill": "feature-flippers" },
+  "properties": { "skill": "jira-ticket" },
   "user": "kshitiz@company.com",
-  "project": "biggerpockets",
+  "project": "my-repo",
   "timestamp": "2026-06-17T14:00:00Z"
 }
 ```
 
-All fields except `event` are optional. `properties` is a free-form JSON object — add whatever context is useful.
+All fields except `event` are optional. `properties` is free-form JSON.
 
-## Endpoints
+## API
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/orgs` | None | Create an org, get an API key |
-| `POST` | `/events` | Bearer token | Ingest an event |
-| `GET` | `/dashboard?key=` | API key in query | View the dashboard |
+| `GET/POST` | `/setup` | None* | Create an org, get an API key |
+| `POST` | `/orgs` | None* | Create an org (JSON API) |
+| `POST` | `/events` | `Bearer <api_key>` | Ingest an event |
+| `GET` | `/login` | — | Sign in with API key |
+| `GET` | `/dashboard` | Cookie session | View analytics dashboard |
 | `GET` | `/health` | None | Health check |
+
+\* If `ADMIN_SECRET` is set, org creation requires it.
