@@ -37,7 +37,7 @@
     <!-- Stat cards -->
     <div class="grid grid-cols-3 gap-4">
       <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <p class="text-sm text-gray-500 mb-1">Total Skill Uses</p>
+        <p class="text-sm text-gray-500 mb-1">Total Events</p>
         <p class="text-3xl font-bold text-gray-900">{{ total }}</p>
       </div>
       <div class="bg-white rounded-xl border border-gray-200 p-6">
@@ -65,6 +65,77 @@
       {% else %}
       <p class="text-sm text-gray-400 py-8 text-center">No skill events yet. Add the hook to start tracking.</p>
       {% endif %}
+    </div>
+
+    <!-- Tool breakdown -->
+    <div class="grid grid-cols-3 gap-6">
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Tool usage</h2>
+        {% if tool_breakdown %}
+          {% set max_tool = tool_breakdown[0][1] %}
+          <ul class="space-y-3">
+            {% for tool, count in tool_breakdown %}
+            <li>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-800 font-mono font-medium">{{ tool }}</span>
+                <span class="text-gray-500 tabular-nums ml-4">{{ count }}</span>
+              </div>
+              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-400 rounded-full" style="width: {{ (count / max_tool * 100) | round | int }}%"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-gray-400">No data yet.</p>
+        {% endif %}
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Top bash commands</h2>
+        {% if top_bash_commands %}
+          {% set max_cmd = top_bash_commands[0][1] %}
+          <ul class="space-y-3">
+            {% for cmd, count in top_bash_commands %}
+            <li>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-800 font-mono font-medium">{{ cmd }}</span>
+                <span class="text-gray-500 tabular-nums ml-4">{{ count }}</span>
+              </div>
+              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-amber-400 rounded-full" style="width: {{ (count / max_cmd * 100) | round | int }}%"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-gray-400">No data yet.</p>
+        {% endif %}
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Files edited by type</h2>
+        {% if top_extensions %}
+          {% set max_ext = top_extensions[0][1] %}
+          <ul class="space-y-3">
+            {% for ext, count in top_extensions %}
+            <li>
+              <div class="flex items-center justify-between text-sm mb-1">
+                <span class="text-gray-800 font-mono font-medium">.{{ ext }}</span>
+                <span class="text-gray-500 tabular-nums ml-4">{{ count }}</span>
+              </div>
+              <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-400 rounded-full" style="width: {{ (count / max_ext * 100) | round | int }}%"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-gray-400">No data yet.</p>
+        {% endif %}
+      </div>
+
     </div>
 
     <!-- Skills leaderboard + Top projects -->
