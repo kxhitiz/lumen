@@ -1,11 +1,16 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from mcp.server.fastmcp import FastMCP, Context
+from mcp.server.transport_security import TransportSecuritySettings
 from sqlalchemy import func, desc
 from .database import SessionLocal
 from .models import Event, Org
 
-mcp = FastMCP("lumen", stateless_http=True)
+mcp = FastMCP(
+    "lumen",
+    stateless_http=True,
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 def _resolve_org(ctx: Context):
