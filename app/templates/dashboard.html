@@ -78,7 +78,7 @@
             {% for tool, count in tool_breakdown %}
             <li>
               <div class="flex items-center justify-between text-sm mb-1">
-                <span class="text-gray-800 font-mono font-medium">{{ tool }}</span>
+                <span class="text-gray-800 font-mono font-medium">{{ 'Subagent' if tool == 'Agent' else tool }}</span>
                 <span class="text-gray-500 tabular-nums ml-4">{{ count }}</span>
               </div>
               <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
