@@ -212,7 +212,11 @@
               </td>
               <td class="py-2 pr-4">
                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                  {{ event.event }}
+                  {% if event.event == 'tool_used' and event.properties and event.properties.get('tool') %}
+                    tool: {{ event.properties.get('tool') }}
+                  {% else %}
+                    {{ event.event }}
+                  {% endif %}
                 </span>
               </td>
               <td class="py-2 pr-4 text-gray-600 font-mono text-xs">{{ event.project or '—' }}</td>
