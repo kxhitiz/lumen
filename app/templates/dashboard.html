@@ -27,7 +27,6 @@
         >{{ d }}d</a>
         {% endfor %}
       </div>
-      <button onclick="clearData()" class="text-xs text-red-400 hover:text-red-600">Clear data</button>
       <a href="/logout" class="text-xs text-gray-400 hover:text-gray-600">Sign out</a>
     </div>
   </header>
@@ -70,11 +69,11 @@
     <!-- Tool breakdown -->
     <div class="grid grid-cols-3 gap-6">
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Tool usage</h2>
         {% if tool_breakdown %}
           {% set max_tool = tool_breakdown[0][1] %}
-          <ul class="space-y-3">
+          <ul class="space-y-3 overflow-y-auto flex-1" style="max-height: 260px">
             {% for tool, count in tool_breakdown %}
             <li>
               <div class="flex items-center justify-between text-sm mb-1">
@@ -92,11 +91,11 @@
         {% endif %}
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Top bash commands</h2>
         {% if top_bash_commands %}
           {% set max_cmd = top_bash_commands[0][1] %}
-          <ul class="space-y-3">
+          <ul class="space-y-3 overflow-y-auto flex-1" style="max-height: 260px">
             {% for cmd, count in top_bash_commands %}
             <li>
               <div class="flex items-center justify-between text-sm mb-1">
@@ -114,11 +113,11 @@
         {% endif %}
       </div>
 
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col">
         <h2 class="text-sm font-semibold text-gray-700 mb-4">Files edited by type</h2>
         {% if top_extensions %}
           {% set max_ext = top_extensions[0][1] %}
-          <ul class="space-y-3">
+          <ul class="space-y-3 overflow-y-auto flex-1" style="max-height: 260px">
             {% for ext, count in top_extensions %}
             <li>
               <div class="flex items-center justify-between text-sm mb-1">
